@@ -1,5 +1,5 @@
-using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
@@ -11,7 +11,10 @@ public class PlayerController : MonoBehaviour
 
     public float moveSpeed = 5f;
     public float jumpForce = 5f;
-    public int maxJumps = 2;
+    public int maxJumps = 1;
+    private bool jump;
+    private bool doubleJump;
+    [SerializeField] private float accelerationTime = 0.1f;
 
     // Start is called before the first frame update
     void Start()
@@ -24,28 +27,50 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        float FeatherCount = GlobalFeather.fAmount; // Replace YourTypeHere with the actual type
+
+
         float moveHorizontal = Input.GetAxis("Horizontal");
 
-        Vector2 movement = new Vector2(moveHorizontal, 0f);
-        rb.velocity = movement * moveSpeed;
+        Vector2 targetVelocity = new Vector2(moveHorizontal * moveSpeed, rb.velocity.y);
+        rb.velocity = Vector2.Lerp(rb.velocity, targetVelocity, accelerationTime);
 
-        if (isGrounded)
+
+        if (isGrounded && Input.GetButtonDown("Jump"))
         {
-            if (Input.GetButtonDown("Jump"))
-            {
-                rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
-                isGrounded = false;
-                canDoubleJump = true;
-            }
+            jump = true;
+            isGrounded = false;
+            canDoubleJump = true;
         }
-        else if (canDoubleJump)
+        else if (!isGrounded && canDoubleJump && FeatherCount >= 1 && Input.GetButtonDown("Jump"))
         {
-            if (Input.GetButtonDown("Jump"))
+            doubleJump = true;
+            canDoubleJump = false;
+            Debug.Log("FeatherCount after double jump: " + FeatherCount); // Print the FeatherCount to the console
+
+        }
+    }
+
+    void FixedUpdate()
+    {
+       if (jump)
+        {
+            rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+            jump = false;
+        }
+        else if (doubleJump)
+        {
+            // If the player is moving downwards, add the absolute value of the downwards velocity to the jump force
+            if (rb.velocity.y < 0)
             {
-                rb.velocity = new Vector2(rb.velocity.x, 0f);
-                rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
-                canDoubleJump = false;
+                rb.velocity = new Vector2(rb.velocity.x, 0);
+                rb.AddForce(Vector2.up * (jumpForce + Mathf.Abs(rb.velocity.y)), ForceMode2D.Impulse);
             }
+            else
+            {
+                rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+            }
+            doubleJump = false;
         }
     }
 
@@ -55,6 +80,13 @@ public class PlayerController : MonoBehaviour
         {
             isGrounded = true;
             canDoubleJump = true;
+        }
+    }
+    private void OnCollisionExit2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Ground"))
+        {
+            isGrounded = false;
         }
     }
 }
