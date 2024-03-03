@@ -5,6 +5,7 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     [SerializeField] private Rigidbody2D rb;
+   
 
     [SerializeField] private bool isGrounded;
     [SerializeField] private bool canDoubleJump;
@@ -22,6 +23,7 @@ public class PlayerController : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         isGrounded = true;
         canDoubleJump = true;
+        gameObject.GetComponent<SpriteRenderer>().flipX = false;
     }
 
     // Update is called once per frame
@@ -48,6 +50,14 @@ public class PlayerController : MonoBehaviour
             canDoubleJump = false;
             Debug.Log("FeatherCount after double jump: " + FeatherCount); // Print the FeatherCount to the console
 
+        }
+        if (rb.velocity.x > 0)
+        {
+            gameObject.GetComponent<SpriteRenderer>().flipX = false;
+        }
+        else if (rb.velocity.x < 0)
+        {
+            gameObject.GetComponent<SpriteRenderer>().flipX = true;
         }
     }
 
